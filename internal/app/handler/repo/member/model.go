@@ -1,6 +1,7 @@
 package member
 
 import (
+	"github.com/vincentwijaya/go-ocr/internal/app/handler/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/handler/repo/vehicle"
 	"gorm.io/gorm"
 )
@@ -12,4 +13,5 @@ type Member struct {
 	PhoneNumber string
 	Email       string
 	Vehicles    []vehicle.Vehicle
+	Faces       []face.Face
 }
