@@ -35,6 +35,16 @@ const devFileName = "ocr.yaml"
 const infoFile = "ocr.info.log"
 const errorFile = "ocr.error.log"
 
+const banner = `
+________  ________  ________     
+|\   __  \|\   ____\|\   __  \    
+\ \  \|\  \ \  \___|\ \  \|\  \   
+ \ \  \\\  \ \  \    \ \   _  _\  
+  \ \  \\\  \ \  \____\ \  \\  \| 
+   \ \_______\ \_______\ \__\\ _\ 
+    \|_______|\|_______|\|__|\|__|
+`
+
 func main() {
 	//Read config
 	var config Config
@@ -52,6 +62,8 @@ func main() {
 		Stdout:     config.Log.Stdout,
 	}
 	log.InitLogger(config.Server.Environment, logConfig, []string{})
+
+	log.Info(banner)
 
 	// Repository
 
