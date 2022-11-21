@@ -1,0 +1,8 @@
+[Server]
+  Port        = ":9000"
+  Environment = "development"
+
+[Log]
+  LogPath = "log/"
+  Level   = "info"
+  Stdout  = true
