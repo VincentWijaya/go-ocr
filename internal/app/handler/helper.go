@@ -1,22 +1,24 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/vincentwijaya/go-ocr/constant/errs"
 	"github.com/vincentwijaya/go-ocr/internal/entity"
 	"github.com/vincentwijaya/go-pkg/log"
 )
 
-func writeResponse(w http.ResponseWriter, data interface{}, err error) {
+func writeResponse(w http.ResponseWriter, data interface{}, err error, ctx context.Context) {
 	w.Header().Set("Content-Type", "application/json")
 	response := &entity.Response{
 		Success: false,
 	}
 
 	if err != nil {
-		response.Message, response.Code = classifyError(err)
+		response.Message, response.Code = classifyError(err, ctx)
 	} else {
 		response.Success = true
 		response.Code = errs.Success
@@ -27,7 +29,8 @@ func writeResponse(w http.ResponseWriter, data interface{}, err error) {
 		response.Data = data
 	}
 
-	log.Infof("Response: %+v", response)
+	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
+	logger.Infof("Response: %+v", response)
 	body, _ := json.Marshal(response)
 	_, _ = w.Write(body)
 }
@@ -59,7 +62,8 @@ var (
 	}
 )
 
-func classifyError(err error) (string, string) {
+func classifyError(err error, ctx context.Context) (string, string) {
+	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 	val, exist := errToResponse[err]
 	if !exist {
 		log.Infof("Unmapped error:%v", err.Error())
@@ -68,7 +72,7 @@ func classifyError(err error) (string, string) {
 	if val.apiFail {
 		// on api fail, return general error message
 		// log the error on log
-		log.Errorf("Error on API code [%s]:%s", val.code, err.Error())
+		logger.Errorf("Error on API code [%s]:%s", val.code, err.Error())
 	}
 	return val.message, val.code
 }

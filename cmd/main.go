@@ -12,6 +12,7 @@ import (
 	"github.com/vincentwijaya/go-pkg/log"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5/middleware"
 	"gopkg.in/gcfg.v1"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -112,6 +113,10 @@ func main() {
 	// 	MaxAge:           300,
 	// 	Debug:            true,
 	// }))
+
+	httpRouter.Use(middleware.RequestID)
+	httpRouter.Use(middleware.RealIP)
+	httpRouter.Use(middleware.Timeout(60 * time.Second))
 
 	httpRouter.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
