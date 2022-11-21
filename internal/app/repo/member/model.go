@@ -1,8 +1,8 @@
 package member
 
 import (
-	"github.com/vincentwijaya/go-ocr/internal/app/handler/repo/face"
-	"github.com/vincentwijaya/go-ocr/internal/app/handler/repo/vehicle"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	"gorm.io/gorm"
 )
 
