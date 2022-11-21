@@ -19,10 +19,10 @@ import (
 )
 
 type Config struct {
-	Server      ServerConfig
-	Log         LogConfig
-	Database    DBConfig
-	ImgbbAPIKey string
+	Server   ServerConfig
+	Log      LogConfig
+	Database DBConfig
+	IMGBB    IMGBBConfig
 }
 
 type ServerConfig struct {
@@ -42,6 +42,10 @@ type DBConfig struct {
 	User     string
 	Password string
 	DB       string
+}
+
+type IMGBBConfig struct {
+	APIKey string
 }
 
 const fileLocation = "/etc/ocr/"
