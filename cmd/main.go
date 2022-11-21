@@ -19,9 +19,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Log      LogConfig
-	Database DBConfig
+	Server      ServerConfig
+	Log         LogConfig
+	Database    DBConfig
+	ImgbbAPIKey string
 }
 
 type ServerConfig struct {
