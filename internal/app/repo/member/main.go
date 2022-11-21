@@ -2,17 +2,17 @@ package member
 
 import "gorm.io/gorm"
 
-type memberRepo struct {
+type MemberRepo struct {
 	db *gorm.DB
 }
 
-func NewMemberRepo(db *gorm.DB) *memberRepo {
-	return &memberRepo{
+func NewMemberRepo(db *gorm.DB) *MemberRepo {
+	return &MemberRepo{
 		db: db,
 	}
 }
 
-func (mr *memberRepo) CreateMember(member Member) error {
+func (mr *MemberRepo) CreateMember(member Member) error {
 	if result := mr.db.Create(&member); result.Error != nil {
 		return result.Error
 	}
