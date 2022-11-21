@@ -1,6 +1,10 @@
 package validate
 
-import "github.com/vincentwijaya/go-ocr/internal/app/repo/member"
+import (
+	"context"
+
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/member"
+)
 
 type ValidateUC interface {
 }
@@ -15,12 +19,6 @@ func New(memberRepo member.MemberRepo) *validateUC {
 	}
 }
 
-func (uc *validateUC) Validate() ValidateUC {
-	if !uc.memberRepo {
-		panic("memberRepo is nil")
-	}
-
-	return uc
+func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, request ValidatePlateAndOwnerRequest) error {
+	return nil
 }
-
-func (uc *validateUC) ValidatePlateAndOwner()

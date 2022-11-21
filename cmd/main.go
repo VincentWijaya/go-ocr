@@ -4,16 +4,23 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/vincentwijaya/go-ocr/internal/app/handler"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/member"
+	"github.com/vincentwijaya/go-ocr/internal/app/usecase/validate"
 	"github.com/vincentwijaya/go-pkg/log"
 
 	"github.com/go-chi/chi"
 	"gopkg.in/gcfg.v1"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Config struct {
-	Server ServerConfig
-	Log    LogConfig
+	Server   ServerConfig
+	Log      LogConfig
+	Database DBConfig
 }
 
 type ServerConfig struct {
@@ -25,6 +32,14 @@ type LogConfig struct {
 	LogPath string
 	Level   string
 	Stdout  bool
+}
+
+type DBConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DB       string
 }
 
 const fileLocation = "/etc/ocr/"
@@ -65,11 +80,20 @@ func main() {
 
 	log.Info(banner)
 
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta", config.Database.Host, config.Database.User, config.Database.Password, config.Database.DB, config.Database.Port)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect to DB")
+	}
+
 	// Repository
+	memberRepo := member.NewMemberRepo(db)
 
 	// Usecase
+	validateUC := validate.New(*memberRepo)
 
-	// Hanlder
+	// Handler
+	httpHandler := handler.New(validateUC)
 
 	checker := systemCheck{
 		pinger: map[string]Tester{},
@@ -94,7 +118,11 @@ func main() {
 		w.Write([]byte("nothing here"))
 	})
 	httpRouter.Get("/ping", checker.ping)
-	// httpRouter.Get("/health", checker.health)
+	httpRouter.Get("/health", checker.health)
+
+	httpRouter.Route("/v1", func(r chi.Router) {
+		r.Post("/validate-vehicle", httpHandler.ValidateVehicleAndOwner)
+	})
 
 	log.Infof("Service Started on:%v", config.Server.Port)
 	err = http.ListenAndServe(config.Server.Port, httpRouter)
@@ -120,21 +148,21 @@ func (sys *systemCheck) ping(w http.ResponseWriter, r *http.Request) {
 }
 
 // DB Health pinger
-// func (sys *systemCheck) health(w http.ResponseWriter, r *http.Request) {
-// 	var str string
-// 	for k, v := range sys.pinger {
-// 		start := time.Now()
-// 		status := "Success"
-// 		message := "successful"
-// 		if err := v.Ping(); err != nil {
-// 			status = "Error"
-// 			message = err.Error()
-// 		}
-// 		duration := time.Now().Sub(start).Milliseconds()
-// 		str = fmt.Sprintf("%s%s | %s | %s | %dms\n", str, k, status, message, duration)
-// 	}
-// 	_, _ = w.Write([]byte(str))
-// }
+func (sys *systemCheck) health(w http.ResponseWriter, r *http.Request) {
+	var str string
+	for k, v := range sys.pinger {
+		start := time.Now()
+		status := "Success"
+		message := "successful"
+		if err := v.Ping(); err != nil {
+			status = "Error"
+			message = err.Error()
+		}
+		duration := time.Now().Sub(start).Milliseconds()
+		str = fmt.Sprintf("%s%s | %s | %s | %dms\n", str, k, status, message, duration)
+	}
+	_, _ = w.Write([]byte(str))
+}
 
 func getConfigLocation() (string, string) {
 	env := os.Getenv("ENV")
