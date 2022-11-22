@@ -128,7 +128,6 @@ func main() {
 		w.Write([]byte("nothing here"))
 	})
 	httpRouter.Get("/ping", checker.ping)
-	httpRouter.Get("/health", checker.health)
 
 	httpRouter.Route("/v1", func(r chi.Router) {
 		r.Post("/validate-vehicle", httpHandler.ValidateVehicleAndOwner)
@@ -155,23 +154,6 @@ type systemCheck struct {
 
 func (sys *systemCheck) ping(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("pong"))
-}
-
-// DB Health pinger
-func (sys *systemCheck) health(w http.ResponseWriter, r *http.Request) {
-	var str string
-	for k, v := range sys.pinger {
-		start := time.Now()
-		status := "Success"
-		message := "successful"
-		if err := v.Ping(); err != nil {
-			status = "Error"
-			message = err.Error()
-		}
-		duration := time.Now().Sub(start).Milliseconds()
-		str = fmt.Sprintf("%s%s | %s | %s | %dms\n", str, k, status, message, duration)
-	}
-	_, _ = w.Write([]byte(str))
 }
 
 func getConfigLocation() (string, string) {
