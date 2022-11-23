@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/vincentwijaya/go-ocr/internal/app/handler"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/member"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	"github.com/vincentwijaya/go-ocr/internal/app/usecase/validate"
 	"github.com/vincentwijaya/go-pkg/log"
 
@@ -91,6 +93,7 @@ func main() {
 	if err != nil {
 		panic("failed to connect to DB")
 	}
+	db.AutoMigrate(&member.Member{}, &face.Face{}, &vehicle.Vehicle{})
 
 	// Repository
 	memberRepo := member.NewMemberRepo(db)
