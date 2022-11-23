@@ -10,6 +10,7 @@ import (
 )
 
 func Base64ToPNG(filename string, data string) error {
+	fmt.Println(data)
 	unbased, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		panic("Cannot decode b64")
