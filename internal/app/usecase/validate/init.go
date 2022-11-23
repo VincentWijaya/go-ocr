@@ -3,9 +3,10 @@ package validate
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/vincentwijaya/go-ocr/internal/app/repo/member"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 	"github.com/vincentwijaya/go-ocr/pkg/recognizer"
 	"github.com/vincentwijaya/go-ocr/pkg/utils"
@@ -15,12 +16,12 @@ type ValidateUC interface {
 }
 
 type validateUC struct {
-	memberRepo member.MemberRepo
+	vehicleRepo vehicle.VehicleRepo
 }
 
-func New(memberRepo member.MemberRepo) *validateUC {
+func New(vehicleRepo vehicle.VehicleRepo) *validateUC {
 	return &validateUC{
-		memberRepo: memberRepo,
+		vehicleRepo: vehicleRepo,
 	}
 }
 
@@ -33,10 +34,18 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 	}
 
 	logger.Infof("%+v", recognizeRes)
-	if recognizeRes.Results[0].Confidence < 90 {
+	recognizeData := recognizeRes.Results[0]
+	if recognizeData.Confidence < 90 {
 		err = errors.New("Please check vehicle photo")
 		return
 	}
+
+	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(recognizeData.Plate)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("%+v", res.Member.ID)
 
 	go func() {
 		if err := utils.RemoveLocalFile(vehiclePhotoLocation); err != nil {

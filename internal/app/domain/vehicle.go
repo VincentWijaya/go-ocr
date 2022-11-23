@@ -1,4 +1,4 @@
-package vehicle
+package domain
 
 import "gorm.io/gorm"
 
@@ -8,4 +8,5 @@ type Vehicle struct {
 	PlateNumber string `gorm:"index:plate_number,unique"`
 	Brand       string
 	ModelName   string
+	Member      Member
 }

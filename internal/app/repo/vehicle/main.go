@@ -1,19 +1,22 @@
 package vehicle
 
-import "gorm.io/gorm"
+import (
+	"github.com/vincentwijaya/go-ocr/internal/app/domain"
+	"gorm.io/gorm"
+)
 
-type vehicleRepo struct {
+type VehicleRepo struct {
 	db *gorm.DB
 }
 
-func NewVehicleRepo(db *gorm.DB) *vehicleRepo {
-	return &vehicleRepo{
+func NewVehicleRepo(db *gorm.DB) *VehicleRepo {
+	return &VehicleRepo{
 		db: db,
 	}
 }
 
-func (vr *vehicleRepo) FindVehicleByPlateNumber(plateNumber string) (res *Vehicle, err error) {
-	err = vr.db.Where("plate_number = ?", plateNumber).First(&res).Error
+func (vr *VehicleRepo) FindVehicleByPlateNumber(plateNumber string) (res *domain.Vehicle, err error) {
+	err = vr.db.Where("plate_number = ?", plateNumber).Preload("Member").First(&res).Error
 
 	return
 }

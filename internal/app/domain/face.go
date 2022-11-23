@@ -1,4 +1,4 @@
-package face
+package domain
 
 import "gorm.io/gorm"
 
