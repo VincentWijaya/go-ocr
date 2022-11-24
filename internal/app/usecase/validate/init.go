@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 	"github.com/vincentwijaya/go-ocr/pkg/recognizer"
@@ -17,11 +18,13 @@ type ValidateUC interface {
 
 type validateUC struct {
 	vehicleRepo vehicle.VehicleRepo
+	faceRepo    face.FaceRepo
 }
 
-func New(vehicleRepo vehicle.VehicleRepo) *validateUC {
+func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo) *validateUC {
 	return &validateUC{
 		vehicleRepo: vehicleRepo,
+		faceRepo:    faceRepo,
 	}
 }
 
@@ -45,7 +48,12 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 		return
 	}
 
-	fmt.Println("%+v", res.Member.ID)
+	faces, err := uc.faceRepo.FindFaceByUserID(res.Member.ID)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("%+v", faces)
 
 	go func() {
 		if err := utils.RemoveLocalFile(vehiclePhotoLocation); err != nil {

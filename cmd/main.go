@@ -8,6 +8,7 @@ import (
 
 	"github.com/vincentwijaya/go-ocr/internal/app/domain"
 	"github.com/vincentwijaya/go-ocr/internal/app/handler"
+	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	"github.com/vincentwijaya/go-ocr/internal/app/usecase/validate"
 	"github.com/vincentwijaya/go-pkg/log"
@@ -96,9 +97,10 @@ func main() {
 
 	// Repository
 	vehicleRepo := vehicle.NewVehicleRepo(db)
+	faceRepo := face.NewFaceRepo(db)
 
 	// Usecase
-	validateUC := validate.New(*vehicleRepo)
+	validateUC := validate.New(*vehicleRepo, *faceRepo)
 
 	// Handler
 	httpHandler := handler.New(validateUC)
