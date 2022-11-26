@@ -3,7 +3,6 @@ package validate
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
@@ -30,6 +29,16 @@ func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo) *validateUC {
 
 func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) (err error) {
 	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
+	defer func() {
+		go func() {
+			if err := utils.RemoveLocalFile(vehiclePhotoLocation); err != nil {
+				logger.Error(err)
+			}
+			if err := utils.RemoveLocalFile(facePhotoLocation); err != nil {
+				logger.Error(err)
+			}
+		}()
+	}()
 
 	recognizeRes, err := recognizer.DirectRecognize(vehiclePhotoLocation)
 	if err != nil {
@@ -52,17 +61,10 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 	if err != nil {
 		return
 	}
-
-	fmt.Println("%+v", faces)
-
-	go func() {
-		if err := utils.RemoveLocalFile(vehiclePhotoLocation); err != nil {
-			logger.Error(err)
-		}
-		if err := utils.RemoveLocalFile(facePhotoLocation); err != nil {
-			logger.Error(err)
-		}
-	}()
+	if len(faces) < 1 {
+		err = errors.New("no face data found")
+		return
+	}
 
 	return nil
 }

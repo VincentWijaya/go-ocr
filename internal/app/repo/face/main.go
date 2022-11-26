@@ -15,7 +15,7 @@ func NewFaceRepo(db *gorm.DB) *FaceRepo {
 	}
 }
 
-func (fr *FaceRepo) FindFaceByMemberID(memberID uint) (res *[]domain.Face, err error) {
+func (fr *FaceRepo) FindFaceByMemberID(memberID uint) (res []domain.Face, err error) {
 	result := fr.db.Where("member_id = ?", memberID).Find(&res)
 
 	if result.Error != nil {
