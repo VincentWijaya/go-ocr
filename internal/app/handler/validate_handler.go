@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -60,10 +61,17 @@ func readAndSaveFile(r *http.Request, dir, formKey string) (fileLocation string,
 	}
 	defer file.Close()
 
-	f, err := os.OpenFile(dir+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	fileName := handler.Filename
+
+	if formKey == "driverPhoto" {
+		fileName = strings.Split(handler.Filename, ".")[0]
+		fileName = fileName + ".jpeg"
+	}
+	log.Info(dir+fileName, " ", fileName, " ", formKey)
+	f, err := os.OpenFile(dir+fileName, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return
 	}
 	io.Copy(f, file)
-	return handler.Filename, nil
+	return fileName, nil
 }
