@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"math"
 
+	"github.com/vincentwijaya/go-ocr/internal/app/domain"
+
 	"github.com/Kagami/go-face"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
@@ -29,6 +31,33 @@ func GetFaceDescriptor(ctx context.Context, facePhotoLocation string) (descripto
 	}
 
 	return descriptorToBytes(face.Descriptor), nil
+}
+
+func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tolerance float32) uint {
+	var (
+		length     = len(memberFaces)
+		categories = make([]int32, length)
+		samples    = make([]face.Descriptor, length)
+	)
+
+	rec, err := face.NewRecognizer("./testdata/models")
+	if err != nil {
+		log.Errorf("Can't init face recognizer: %v", err)
+		return 0
+	}
+	defer rec.Close()
+
+	for i, f := range memberFaces {
+		descriptor := bytesToDescriptor(f.Descriptor)
+		samples[i] = descriptor
+		categories[i] = int32(f.MemberID)
+	}
+
+	rec.SetSamples(samples, categories)
+
+	var memberID = rec.ClassifyThreshold(bytesToDescriptor(actualFaceDescriptor), tolerance)
+
+	return uint(memberID)
 }
 
 func descriptorToBytes(descriptor [128]float32) [512]byte {
