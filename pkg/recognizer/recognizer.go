@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
 
+	"github.com/openalpr/openalpr/src/bindings/go/openalpr"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 )
 
@@ -60,6 +62,25 @@ func Recognize(photoLocation string) (res RecognizeResult, err error) {
 	}
 
 	if err = json.Unmarshal(stdout.Bytes(), &res); err != nil {
+		return
+	}
+
+	return
+}
+
+func DirectRecognize(photoLocation string) (res openalpr.AlprResults, err error) {
+	alpr := openalpr.NewAlpr("sg", "", "/usr/share/openalpr/runtime_data")
+	defer alpr.Unload()
+
+	if !alpr.IsLoaded() {
+		fmt.Println("OpenAlpr failed to load!")
+		err = errors.New("failed to load openalr")
+		return
+	}
+	alpr.SetTopN(20)
+
+	res, err = alpr.RecognizeByFilePath(photoLocation)
+	if err != nil {
 		return
 	}
 

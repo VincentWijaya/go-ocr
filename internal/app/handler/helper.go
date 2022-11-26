@@ -66,7 +66,7 @@ func classifyError(err error, ctx context.Context) (string, string) {
 	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 	val, exist := errToResponse[err]
 	if !exist {
-		log.Infof("Unmapped error:%v", err.Error())
+		logger.Errorf("Unmapped error:%v", err.Error())
 		return errs.GeneralErrorMessage, errs.UndefinedErrorCode
 	}
 	if val.apiFail {

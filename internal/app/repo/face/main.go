@@ -1,6 +1,9 @@
 package face
 
-import "gorm.io/gorm"
+import (
+	"github.com/vincentwijaya/go-ocr/internal/app/domain"
+	"gorm.io/gorm"
+)
 
 type FaceRepo struct {
 	db *gorm.DB
@@ -12,8 +15,8 @@ func NewFaceRepo(db *gorm.DB) *FaceRepo {
 	}
 }
 
-func (fr *FaceRepo) FindFaceByUserID(userID uint) (res *[]FaceRepo, err error) {
-	result := fr.db.Where("user_id = ?", userID).Find(&res)
+func (fr *FaceRepo) FindFaceByMemberID(memberID uint) (res *[]domain.Face, err error) {
+	result := fr.db.Where("member_id = ?", memberID).Find(&res)
 
 	if result.Error != nil {
 		err = result.Error

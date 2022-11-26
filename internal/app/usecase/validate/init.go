@@ -31,24 +31,24 @@ func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo) *validateUC {
 func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) (err error) {
 	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 
-	recognizeRes, err := recognizer.Recognize(vehiclePhotoLocation)
+	recognizeRes, err := recognizer.DirectRecognize(vehiclePhotoLocation)
 	if err != nil {
 		return
 	}
 
 	logger.Infof("%+v", recognizeRes)
-	recognizeData := recognizeRes.Results[0]
-	if recognizeData.Confidence < 90 {
-		err = errors.New("Please check vehicle photo")
+	recognizeData := recognizeRes.Plates[0]
+	if recognizeData.BestPlate == "" {
+		err = errors.New("plate not recognize")
 		return
 	}
 
-	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(recognizeData.Plate)
+	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(recognizeData.BestPlate)
 	if err != nil {
 		return
 	}
 
-	faces, err := uc.faceRepo.FindFaceByUserID(res.Member.ID)
+	faces, err := uc.faceRepo.FindFaceByMemberID(res.Member.ID)
 	if err != nil {
 		return
 	}
