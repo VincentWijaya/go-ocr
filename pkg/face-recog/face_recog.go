@@ -2,7 +2,6 @@ package recog
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -112,7 +111,7 @@ func mustRecognizeSingleFile(rec *face.Recognizer, filename string) (face.Face, 
 
 	length := len(faces)
 	if length != 1 {
-		return face.Face{}, errors.New(fmt.Sprintf("Expected 1 face on photo %s, got %d faces", filename, length))
+		return face.Face{}, fmt.Errorf("expected 1 face on photo %s, got %d faces", filename, length)
 	}
 
 	return faces[0], nil
