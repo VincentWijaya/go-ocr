@@ -21,10 +21,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Log      LogConfig
-	Database DBConfig
-	IMGBB    IMGBBConfig
+	Server        ServerConfig
+	Log           LogConfig
+	Database      DBConfig
+	MailJetConfig MailJetConfig
 }
 
 type ServerConfig struct {
@@ -46,8 +46,9 @@ type DBConfig struct {
 	DB       string
 }
 
-type IMGBBConfig struct {
+type MailJetConfig struct {
 	APIKey string
+	Secret string
 }
 
 const fileLocation = "/etc/ocr/"
