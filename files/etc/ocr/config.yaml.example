@@ -13,3 +13,7 @@
 	User     = "postgres"
 	Password = "postgres"
 	DB       = "postgres"
+
+[MailJet]
+  API_KEY = "api key"
+  SECRET_KEY = "secret key"
