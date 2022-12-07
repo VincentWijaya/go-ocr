@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/vincentwijaya/go-ocr/constant/errs"
 	"github.com/vincentwijaya/go-ocr/internal/app/domain"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
@@ -72,9 +73,8 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	var emptyByte [512]byte
 	var wg sync.WaitGroup
-	faceData := []domain.Face{}
 
-	for _, face := range faces {
+	for i, face := range faces {
 		var faceDescriptor [512]byte
 		copy(faceDescriptor[:], face.Descriptor)
 
@@ -104,7 +104,7 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 				}
 
 				face.Descriptor = []byte(faceDescriptor[:])
-				faceData = append(faceData, face)
+				faces[i] = face
 				err = uc.faceRepo.SaveFaceData(&face)
 				if err != nil {
 					return
@@ -119,8 +119,12 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 	if err != nil {
 		return
 	}
-	memberFaceIDResult := recog.CompareFace(faceDescriptor, faceData, 0)
+	faceIDResult := recog.CompareFace(faceDescriptor, faces, 0)
 
-	fmt.Println(memberFaceIDResult)
+	if faceIDResult < 1 {
+		err = errs.FaceNotFound
+		return
+	}
+
 	return nil
 }

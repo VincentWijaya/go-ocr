@@ -59,6 +59,11 @@ var (
 			code:    errs.UnauthorizedErrorCode,
 			apiFail: false,
 		},
+		errs.FaceNotFound: {
+			message: errs.FaceNotFoundMessage,
+			code:    errs.FaceNotFoundErrorCode,
+			apiFail: false,
+		},
 	}
 )
 
