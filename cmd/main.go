@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/vincentwijaya/go-ocr/pkg/mailer"
+
 	"github.com/vincentwijaya/go-ocr/internal/app/domain"
 	"github.com/vincentwijaya/go-ocr/internal/app/handler"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
@@ -21,10 +23,10 @@ import (
 )
 
 type Config struct {
-	Server        ServerConfig
-	Log           LogConfig
-	Database      DBConfig
-	MailJetConfig MailJetConfig
+	Server   ServerConfig
+	Log      LogConfig
+	Database DBConfig
+	MailJet  MailJetConfig
 }
 
 type ServerConfig struct {
@@ -47,8 +49,8 @@ type DBConfig struct {
 }
 
 type MailJetConfig struct {
-	APIKey string
-	Secret string
+	APIKey    string
+	SecretKey string
 }
 
 const fileLocation = "/etc/ocr/"
@@ -96,12 +98,14 @@ func main() {
 	}
 	db.AutoMigrate(&domain.Member{}, &domain.Face{}, &domain.Vehicle{})
 
+	mailjetClient := mailer.Init(config.MailJet.APIKey, config.MailJet.SecretKey)
+
 	// Repository
 	vehicleRepo := vehicle.NewVehicleRepo(db)
 	faceRepo := face.NewFaceRepo(db)
 
 	// Usecase
-	validateUC := validate.New(*vehicleRepo, *faceRepo)
+	validateUC := validate.New(*vehicleRepo, *faceRepo, *mailjetClient)
 
 	// Handler
 	httpHandler := handler.New(validateUC)

@@ -30,7 +30,7 @@ func (mj *MailJetClient) SendNotifUnidentifiedFace(email, name, plate string) {
 	messagesInfo := []mailjet.InfoMessagesV31{
 		mailjet.InfoMessagesV31{
 			From: &mailjet.RecipientV31{
-				Email: "vision@mailjet.com",
+				Email: "vincent_wijaya@linkaja.id",
 				Name:  "PT. Vision Aman Sejahtera",
 			},
 			To: &mailjet.RecipientsV31{

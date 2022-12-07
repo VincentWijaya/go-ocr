@@ -15,5 +15,5 @@
 	DB       = "postgres"
 
 [MailJet]
-  API_KEY = "api key"
-  SECRET_KEY = "secret key"
+  APIKey = "api key"
+  SecretKey = "secret key"

@@ -13,6 +13,7 @@ import (
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
 	recog "github.com/vincentwijaya/go-ocr/pkg/face-recog"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
+	"github.com/vincentwijaya/go-ocr/pkg/mailer"
 	"github.com/vincentwijaya/go-ocr/pkg/recognizer"
 	"github.com/vincentwijaya/go-ocr/pkg/utils"
 )
@@ -23,12 +24,14 @@ type ValidateUC interface {
 type validateUC struct {
 	vehicleRepo vehicle.VehicleRepo
 	faceRepo    face.FaceRepo
+	mailjet     mailer.MailJetClient
 }
 
-func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo) *validateUC {
+func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo, mailjet mailer.MailJetClient) *validateUC {
 	return &validateUC{
 		vehicleRepo: vehicleRepo,
 		faceRepo:    faceRepo,
+		mailjet:     mailjet,
 	}
 }
 
@@ -123,6 +126,9 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	if faceIDResult < 1 {
 		err = errs.FaceNotFound
+		go func() {
+			uc.mailjet.SendNotifUnidentifiedFace(res.Member.Email, fmt.Sprintf("%s %s", res.Member.FirstName, res.Member.LastName), res.PlateNumber)
+		}()
 		return
 	}
 
