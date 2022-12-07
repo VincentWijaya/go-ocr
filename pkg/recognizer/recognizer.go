@@ -1,16 +1,10 @@
 package recognizer
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"path"
 
 	"github.com/openalpr/openalpr/src/bindings/go/openalpr"
-	"github.com/vincentwijaya/go-ocr/pkg/log"
 )
 
 type RecognizeResult struct {
@@ -45,27 +39,6 @@ type RecognizeResult struct {
 			MatchesTemplate int     `json:"matches_template"`
 		} `json:"candidates"`
 	} `json:"results"`
-}
-
-func Recognize(photoLocation string) (res RecognizeResult, err error) {
-	pwd, _ := os.Getwd()
-	log.Info("docker", "run", "--rm", "-v", pwd+"/files/images/vehicle:/data:ro", "openalpr/openalpr", "-j", "-c", "sg", path.Base(photoLocation))
-	cmd := exec.Command("docker", "run", "--rm", "--platform", "linux/amd64", "-v", pwd+"/files/images/vehicle:/data:ro", "openalpr/openalpr", "-j", "-c", "sg", path.Base(photoLocation))
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	if err != nil {
-		err = errors.New(stderr.String())
-		return
-	}
-
-	if err = json.Unmarshal(stdout.Bytes(), &res); err != nil {
-		return
-	}
-
-	return
 }
 
 func DirectRecognize(photoLocation string) (res openalpr.AlprResults, err error) {
