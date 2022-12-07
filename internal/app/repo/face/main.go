@@ -25,3 +25,9 @@ func (fr *FaceRepo) FindFaceByMemberID(memberID uint) (res []domain.Face, err er
 
 	return
 }
+
+func (fr *FaceRepo) SaveFaceData(face *domain.Face) (err error) {
+	err = fr.db.Save(face).Error
+
+	return
+}

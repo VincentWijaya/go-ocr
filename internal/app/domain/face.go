@@ -7,5 +7,5 @@ type Face struct {
 	MemberID   uint
 	FullName   string
 	PhotoURL   string
-	Descriptor [512]byte
+	Descriptor []byte
 }

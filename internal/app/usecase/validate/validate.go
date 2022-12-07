@@ -3,15 +3,14 @@ package validate
 import (
 	"context"
 	"errors"
-	"io"
-	"net/http"
-	"os"
-
-	recog "github.com/vincentwijaya/go-ocr/pkg/face-recog"
+	"fmt"
+	"sync"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/vincentwijaya/go-ocr/internal/app/domain"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/face"
 	"github.com/vincentwijaya/go-ocr/internal/app/repo/vehicle"
+	recog "github.com/vincentwijaya/go-ocr/pkg/face-recog"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 	"github.com/vincentwijaya/go-ocr/pkg/recognizer"
 	"github.com/vincentwijaya/go-ocr/pkg/utils"
@@ -72,40 +71,56 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 	}
 
 	var emptyByte [512]byte
+	var wg sync.WaitGroup
+	faceData := []domain.Face{}
 
 	for _, face := range faces {
-		// If face descriptor 0 value will try to recognize face
-		if face.Descriptor == emptyByte {
-			recog.GetFaceDescriptor(ctx)
+		var faceDescriptor [512]byte
+		copy(faceDescriptor[:], face.Descriptor)
+
+		// If face descriptor 0 value will try to recognize face and save face descriptor to db
+		if faceDescriptor == emptyByte {
+			wg.Add(1)
+			memberFacePhotoLocation := fmt.Sprintf("./files/images/face/%v-%s.jpeg", face.MemberID, face.FullName)
+
+			go func(face domain.Face, memberFacePhotoLocation string) {
+				defer func() {
+					go func() {
+						if err := utils.RemoveLocalFile(memberFacePhotoLocation); err != nil {
+							logger.Error(err)
+						}
+					}()
+				}()
+				defer wg.Done()
+
+				if err = utils.DownloadFile(face.PhotoURL, memberFacePhotoLocation); err != nil {
+					logger.Errorf("Failed to download member face: %+v", err)
+					return
+				}
+
+				faceDescriptor, err := recog.GetFaceDescriptor(ctx, memberFacePhotoLocation)
+				if err != nil {
+					return
+				}
+
+				face.Descriptor = []byte(faceDescriptor[:])
+				faceData = append(faceData, face)
+				err = uc.faceRepo.SaveFaceData(&face)
+				if err != nil {
+					return
+				}
+			}(face, memberFacePhotoLocation)
 		}
 	}
 
-	return nil
-}
+	wg.Wait()
 
-func downloadAndSaveFile(URL, fileName string) error {
-	//Get the response bytes from the url
-	response, err := http.Get(URL)
+	faceDescriptor, err := recog.GetFaceDescriptor(ctx, facePhotoLocation)
 	if err != nil {
-		return err
+		return
 	}
-	defer response.Body.Close()
+	memberFaceIDResult := recog.CompareFace(faceDescriptor, faceData, 0)
 
-	if response.StatusCode != 200 {
-		return errors.New("received non 200 response code")
-	}
-	//Create a empty file
-	file, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	//Write the bytes to the fiel
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
-
+	fmt.Println(memberFaceIDResult)
 	return nil
 }

@@ -32,7 +32,7 @@ func GetFaceDescriptor(ctx context.Context, facePhotoLocation string) (descripto
 	return descriptorToBytes(face.Descriptor), nil
 }
 
-func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tolerance float32) uint {
+func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tolerance float32) int {
 	var (
 		length     = len(memberFaces)
 		categories = make([]int32, length)
@@ -47,16 +47,18 @@ func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tole
 	defer rec.Close()
 
 	for i, f := range memberFaces {
-		descriptor := bytesToDescriptor(f.Descriptor)
+		var faceDescriptor [512]byte
+		copy(faceDescriptor[:], f.Descriptor)
+		descriptor := bytesToDescriptor(faceDescriptor)
 		samples[i] = descriptor
-		categories[i] = int32(f.MemberID)
+		categories[i] = int32(f.ID)
 	}
 
 	rec.SetSamples(samples, categories)
 
 	var memberID = rec.ClassifyThreshold(bytesToDescriptor(actualFaceDescriptor), tolerance)
 
-	return uint(memberID)
+	return memberID
 }
 
 func descriptorToBytes(descriptor [128]float32) [512]byte {
