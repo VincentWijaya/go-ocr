@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/vincentwijaya/go-ocr/pkg/mailer"
@@ -137,6 +139,20 @@ func main() {
 		w.Write([]byte("nothing here"))
 	})
 	httpRouter.Get("/ping", checker.ping)
+
+	httpRouter.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		var filepath = path.Join("files/views", "index.html")
+		var tmpl, err = template.ParseFiles(filepath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, make(map[string]interface{}))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 
 	httpRouter.Route("/v1", func(r chi.Router) {
 		r.Post("/validate-vehicle", httpHandler.ValidateVehicleAndOwner)
