@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"path"
 	"time"
 
@@ -17,47 +16,28 @@ import (
 	"github.com/vincentwijaya/go-ocr/internal/app/usecase/validate"
 	"github.com/vincentwijaya/go-pkg/log"
 
+	"github.com/caarlos0/env"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
-	"gopkg.in/gcfg.v1"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type Config struct {
-	Server   ServerConfig
-	Log      LogConfig
-	Database DBConfig
-	MailJet  MailJetConfig
-	ALPR     ALPRConfig
-}
-
-type ServerConfig struct {
-	Port        string
-	Environment string
-}
-
-type LogConfig struct {
-	LogPath string
-	Level   string
-	Stdout  bool
-}
-
-type DBConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DB       string
-}
-
-type MailJetConfig struct {
-	APIKey    string
-	SecretKey string
-}
-
-type ALPRConfig struct {
-	SecretKey string
+	Port             string `env:"PORT" envDefault:"9000"`
+	Environment      string `env:"ENVIRONMENT" envDefault:"dev"`
+	LogPath          string `env:"LOGPATH"`
+	Level            string `env:"LEVEL"`
+	Stdout           bool   `env:"STDOUT" envDefault:"true"`
+	DBHost           string `env:"DBHOST"`
+	DBPort           string `env:"DBPORT"`
+	DBUser           string `env:"DBUSER"`
+	DBPassword       string `env:"DBPASSWORD"`
+	DBName           string `env:"DBNAME"`
+	MailJetAPIKey    string `env:"MAILJETAPIKEY"`
+	MailJetSecretKey string `env:"MAILJETSECRETKEY"`
+	ALPRSecretKey    string `env:"ALPRSECRETKEY"`
 }
 
 const fileLocation = "/etc/ocr/"
@@ -79,40 +59,40 @@ ________  ________  ________
 `
 
 func main() {
-	//Read config
-	var config Config
-	location, fileName := getConfigLocation()
-	err := gcfg.ReadFileInto(&config, location+fileName)
+	err := godotenv.Load()
 	if err != nil {
-		log.Error("Failed to start service:", err)
+		log.Error("unable to load .env file: ", err)
 		return
 	}
 
+	config := Config{}
+	env.Parse(&config)
+
 	logConfig := log.LogConfig{
-		StdoutFile: config.Log.LogPath + infoFile,
-		StderrFile: config.Log.LogPath + errorFile,
-		Level:      config.Log.Level,
-		Stdout:     config.Log.Stdout,
+		StdoutFile: config.LogPath + infoFile,
+		StderrFile: config.LogPath + errorFile,
+		Level:      config.Level,
+		Stdout:     config.Stdout,
 	}
-	log.InitLogger(config.Server.Environment, logConfig, []string{})
+	log.InitLogger(config.Environment, logConfig, []string{})
 
 	log.Info(banner)
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta", config.Database.Host, config.Database.User, config.Database.Password, config.Database.DB, config.Database.Port)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta", config.DBHost, config.DBUser, config.DBPassword, config.DBName, config.DBPort)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect to DB")
 	}
 	db.AutoMigrate(&domain.Member{}, &domain.Face{}, &domain.Vehicle{})
 
-	mailjetClient := mailer.Init(config.MailJet.APIKey, config.MailJet.SecretKey)
+	mailjetClient := mailer.Init(config.MailJetAPIKey, config.MailJetSecretKey)
 
 	// Repository
 	vehicleRepo := vehicle.NewVehicleRepo(db)
 	faceRepo := face.NewFaceRepo(db)
 
 	// Usecase
-	validateUC := validate.New(*vehicleRepo, *faceRepo, *mailjetClient, config.ALPR.SecretKey)
+	validateUC := validate.New(*vehicleRepo, *faceRepo, *mailjetClient, config.ALPRSecretKey)
 
 	// Handler
 	httpHandler := handler.New(validateUC)
@@ -163,13 +143,13 @@ func main() {
 		r.Post("/validate-vehicle", httpHandler.ValidateVehicleAndOwner)
 	})
 
-	log.Infof("Service Started on:%v", config.Server.Port)
-	err = http.ListenAndServe(config.Server.Port, httpRouter)
+	log.Infof("Service Started on:%v", config.Port)
+	err = http.ListenAndServe(config.Port, httpRouter)
 	if err != nil {
 		log.Info("Failed serving Chi Dispatcher:", err)
 		return
 	}
-	log.Info("Serving Chi Dispatcher on port:", config.Server.Port)
+	log.Info("Serving Chi Dispatcher on port:", config.Port)
 }
 
 //-----------[ Pinger ]-----------------
@@ -184,15 +164,4 @@ type systemCheck struct {
 
 func (sys *systemCheck) ping(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("pong"))
-}
-
-func getConfigLocation() (string, string) {
-	env := os.Getenv("ENV")
-	location := devFileLocation
-	name := devFileName
-	if env == "staging" || env == "production" || env == "development" {
-		location = fileLocation
-		name = fmt.Sprintf(fileName, env)
-	}
-	return location, name
 }
