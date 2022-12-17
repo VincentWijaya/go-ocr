@@ -64,6 +64,11 @@ var (
 			code:    errs.FaceNotFoundErrorCode,
 			apiFail: false,
 		},
+		errs.PlateNotRecognize: {
+			message: errs.PlateNotRecognizeMessage,
+			code:    errs.PlateNotRecognizeErrorCode,
+			apiFail: false,
+		},
 	}
 )
 

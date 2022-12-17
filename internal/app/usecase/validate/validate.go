@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,13 +26,15 @@ type validateUC struct {
 	vehicleRepo vehicle.VehicleRepo
 	faceRepo    face.FaceRepo
 	mailjet     mailer.MailJetClient
+	secretKey   string
 }
 
-func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo, mailjet mailer.MailJetClient) *validateUC {
+func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo, mailjet mailer.MailJetClient, secretKey string) *validateUC {
 	return &validateUC{
 		vehicleRepo: vehicleRepo,
 		faceRepo:    faceRepo,
 		mailjet:     mailjet,
+		secretKey:   secretKey,
 	}
 }
 
@@ -48,19 +51,39 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 		}()
 	}()
 
-	recognizeRes, err := recognizer.DirectRecognize(vehiclePhotoLocation)
+	// recognizeRes, err := recognizer.DirectRecognize(vehiclePhotoLocation)
+	// if err != nil {
+	// 	return
+	// }
+	// if len(recognizeRes.Plates) < 1 {
+	// 	err = errs.PlateNotRecognize
+	// 	return
+	// }
+
+	// logger.Infof("%+v", recognizeRes)
+	// recognizeData := recognizeRes.Plates[0]
+	// if recognizeData.BestPlate == "" {
+	// 	err = errs.PlateNotRecognize
+	// 	return
+	// }
+
+	recognizeRes, err := recognizer.Recognize(vehiclePhotoLocation, uc.secretKey)
 	if err != nil {
+		return
+	}
+	if len(recognizeRes.Results) < 1 {
+		err = errs.PlateNotRecognize
 		return
 	}
 
 	logger.Infof("%+v", recognizeRes)
-	recognizeData := recognizeRes.Plates[0]
-	if recognizeData.BestPlate == "" {
-		err = errors.New("plate not recognize")
+	recognizeData := recognizeRes.Results[0]
+	if recognizeData.Plate == "" {
+		err = errs.PlateNotRecognize
 		return
 	}
 
-	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(recognizeData.BestPlate)
+	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(strings.ToUpper(recognizeData.Plate))
 	if err != nil {
 		return
 	}

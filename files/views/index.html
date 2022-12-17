@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
   <div class="container-fluid p-5 bg-primary text-white text-center">
     <h1>Vision</h1>
     <p>Compare vehicle plate number with registered face</p>
@@ -18,17 +17,20 @@
 
   <div class="container mt-5">
     <div class="row">
-      <div class="col-sm-4">
-        <h3>Vehicle Plate Photo</h3>
-        <input id="plateInput" type="file" accept="image/*" capture="camera">
-      </div>
-      <div class="col-sm-4">
-        <h3>Driver Photo</h3>
-        <input id="driverInput" type="file" accept="image/*" capture="camera">
-      </div>
+      <form action="/v1/validate-vehicle" method="POST"  enctype="multipart/form-data">
+        <div class="col-sm-4">
+          <h3>Vehicle Plate Photo</h3>
+          <input id="plateInput" type="file" name="vehiclePhoto" accept="image/*" >
+        </div>
+        <div class="col-sm-4">
+          <h3>Driver Photo</h3>
+          <input id="driverInput" type="file" name="driverPhoto" accept="image/*" capture="camera">
+        </div>
+
+        <button type="submit button" class="btn btn-primary">Submit</button>
+      </form>
     </div>
   </div>
-
 </body>
 
 </html>

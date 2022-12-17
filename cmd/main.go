@@ -29,6 +29,7 @@ type Config struct {
 	Log      LogConfig
 	Database DBConfig
 	MailJet  MailJetConfig
+	ALPR     ALPRConfig
 }
 
 type ServerConfig struct {
@@ -52,6 +53,10 @@ type DBConfig struct {
 
 type MailJetConfig struct {
 	APIKey    string
+	SecretKey string
+}
+
+type ALPRConfig struct {
 	SecretKey string
 }
 
@@ -107,7 +112,7 @@ func main() {
 	faceRepo := face.NewFaceRepo(db)
 
 	// Usecase
-	validateUC := validate.New(*vehicleRepo, *faceRepo, *mailjetClient)
+	validateUC := validate.New(*vehicleRepo, *faceRepo, *mailjetClient, config.ALPR.SecretKey)
 
 	// Handler
 	httpHandler := handler.New(validateUC)
