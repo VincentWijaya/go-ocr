@@ -49,7 +49,7 @@ func (m *Module) ValidateVehicleAndOwner(w http.ResponseWriter, r *http.Request)
 
 	wg.Wait()
 
-	err = m.validate.ValidatePlateAndOwner(ctx, "./files/images/vehicle/"+vehiclePhotoLocation, "./files/images/face/"+driverPhotoLocation)
+	response, err = m.validate.ValidatePlateAndOwner(ctx, "./files/images/vehicle/"+vehiclePhotoLocation, "./files/images/face/"+driverPhotoLocation)
 
 	writeResponse(w, response, err, ctx)
 }

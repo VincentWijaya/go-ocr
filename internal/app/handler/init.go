@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
+
+	"github.com/vincentwijaya/go-ocr/internal/app/domain"
 )
 
 type (
 	ValidateUsecase interface {
-		ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) error
+		ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) (*domain.Vehicle, error)
 	}
 )
 

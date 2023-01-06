@@ -32,11 +32,12 @@ func GetFaceDescriptor(ctx context.Context, facePhotoLocation string) (descripto
 	return descriptorToBytes(face.Descriptor), nil
 }
 
-func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tolerance float32) int {
+func CompareFace(ctx context.Context, actualFaceLocation string, memberFaces []domain.Face, tolerance float32) int {
 	var (
 		length     = len(memberFaces)
 		categories = make([]int32, length)
 		samples    = make([]face.Descriptor, length)
+		logger     = log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 	)
 
 	rec, err := face.NewRecognizer("./testdata/models")
@@ -56,7 +57,14 @@ func CompareFace(actualFaceDescriptor [512]byte, memberFaces []domain.Face, tole
 
 	rec.SetSamples(samples, categories)
 
-	var memberID = rec.ClassifyThreshold(bytesToDescriptor(actualFaceDescriptor), tolerance)
+	face, err := mustRecognizeSingleFile(rec, actualFaceLocation)
+	if err != nil {
+		logger.Errorf("Can't recognize face: %v", err)
+		return -1
+	}
+
+	// var memberID = rec.ClassifyThreshold(bytesToDescriptor(actualFaceDescriptor), tolerance)
+	var memberID = rec.ClassifyThreshold(face.Descriptor, tolerance)
 
 	return memberID
 }

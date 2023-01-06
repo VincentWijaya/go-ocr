@@ -38,7 +38,7 @@ func New(vehicleRepo vehicle.VehicleRepo, faceRepo face.FaceRepo, mailjet mailer
 	}
 }
 
-func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) (err error) {
+func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLocation, facePhotoLocation string) (res *domain.Vehicle, err error) {
 	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 	defer func() {
 		go func() {
@@ -83,7 +83,7 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 		return
 	}
 
-	res, err := uc.vehicleRepo.FindVehicleByPlateNumber(strings.ToUpper(recognizeData.Plate))
+	res, err = uc.vehicleRepo.FindVehicleByPlateNumber(strings.ToUpper(recognizeData.Plate))
 	if err != nil {
 		return
 	}
@@ -141,11 +141,7 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	wg.Wait()
 
-	faceDescriptor, err := recog.GetFaceDescriptor(ctx, facePhotoLocation)
-	if err != nil {
-		return
-	}
-	faceIDResult := recog.CompareFace(faceDescriptor, faces, 0)
+	faceIDResult := recog.CompareFace(ctx, facePhotoLocation, faces, 0.2)
 
 	if faceIDResult < 1 {
 		err = errs.FaceNotFound
@@ -155,5 +151,5 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 		return
 	}
 
-	return nil
+	return
 }
