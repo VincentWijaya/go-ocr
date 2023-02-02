@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/h2non/bimg"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 )
 
@@ -68,10 +71,41 @@ func readAndSaveFile(r *http.Request, dir, formKey string) (fileLocation string,
 		fileName = fileName + ".jpeg"
 	}
 	log.Info(dir+fileName, " ", fileName, " ", formKey)
-	f, err := os.OpenFile(dir+fileName, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(dir+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return
 	}
+
+	if formKey == "vehiclePhoto" {
+		data, err := ioutil.ReadAll(file)
+		if err != nil {
+			return fileName, err
+		}
+
+		converted, err := bimg.NewImage(data).Convert(bimg.JPEG)
+		if err != nil {
+			return fileName, err
+		}
+
+		processed, err := bimg.NewImage(converted).Process(bimg.Options{Quality: 70})
+		if err != nil {
+			return fileName, err
+		}
+
+		rotated, err := bimg.NewImage(processed).Rotate(180)
+		if err != nil {
+			return fileName, err
+		}
+
+		writeError := bimg.Write(fmt.Sprintf("./files/images/vehicle"+"/%s", fileName), rotated)
+		if writeError != nil {
+			return fileName, writeError
+		}
+
+		return fileName, nil
+	}
+
 	io.Copy(f, file)
+
 	return fileName, nil
 }

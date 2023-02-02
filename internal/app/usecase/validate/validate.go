@@ -141,7 +141,7 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	wg.Wait()
 
-	faceIDResult := recog.CompareFace(ctx, facePhotoLocation, faces, 0.2)
+	faceIDResult := recog.CompareFace(ctx, facePhotoLocation, faces, 0.5)
 
 	if faceIDResult < 1 {
 		err = errs.FaceNotFound
