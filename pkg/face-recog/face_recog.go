@@ -10,6 +10,7 @@ import (
 
 	"github.com/Kagami/go-face"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/leandroveronezi/go-recognizer"
 	"github.com/vincentwijaya/go-ocr/pkg/log"
 )
 
@@ -32,7 +33,7 @@ func GetFaceDescriptor(ctx context.Context, facePhotoLocation string) (descripto
 	return descriptorToBytes(face.Descriptor), nil
 }
 
-func CompareFace(ctx context.Context, actualFaceLocation string, memberFaces []domain.Face, tolerance float32) int {
+func CompareFace(ctx context.Context, actualFaceDescriptor [512]byte, memberFaces []domain.Face, tolerance float32) int {
 	var (
 		length     = len(memberFaces)
 		categories = make([]int32, length)
@@ -51,22 +52,41 @@ func CompareFace(ctx context.Context, actualFaceLocation string, memberFaces []d
 		var faceDescriptor [512]byte
 		copy(faceDescriptor[:], f.Descriptor)
 		descriptor := bytesToDescriptor(faceDescriptor)
+		logger.Infof("%v    %+v", f.ID, descriptor)
 		samples[i] = descriptor
 		categories[i] = int32(f.ID)
 	}
 
 	rec.SetSamples(samples, categories)
 
-	face, err := mustRecognizeSingleFile(rec, actualFaceLocation)
-	if err != nil {
-		logger.Errorf("Can't recognize face: %v", err)
-		return -1
-	}
-
+	descriptor := bytesToDescriptor(actualFaceDescriptor)
 	// var memberID = rec.ClassifyThreshold(bytesToDescriptor(actualFaceDescriptor), tolerance)
-	var memberID = rec.ClassifyThreshold(face.Descriptor, tolerance)
+	var memberID = rec.ClassifyThreshold(descriptor, tolerance)
 
 	return memberID
+}
+
+func GetFaceDescriptorNew(ctx context.Context, facePhotoLocation string) (descriptor [512]byte, err error) {
+	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
+	rec := recognizer.Recognizer{}
+	err = rec.Init("./testdata/models")
+	if err != nil {
+		logger.Errorf("Can't init face recognizer: %v", err)
+		return
+	}
+
+	rec.Tolerance = 0.4
+	rec.UseGray = true
+	rec.UseCNN = false
+	defer rec.Close()
+
+	face, err := rec.RecognizeSingle(facePhotoLocation)
+	if err != nil {
+		logger.Errorf("Can't recognize face: %v", err)
+		return
+	}
+
+	return descriptorToBytes(face.Descriptor), nil
 }
 
 func descriptorToBytes(descriptor [128]float32) [512]byte {
@@ -125,4 +145,23 @@ func mustRecognizeSingleFile(rec *face.Recognizer, filename string) (face.Face, 
 	}
 
 	return faces[0], nil
+}
+
+func BBytesToDescriptor(bytes [512]byte) [128]float32 {
+	var result [128]float32
+
+	var i = 0
+
+	for j := 0; j < 512; j += 4 {
+		result[i] = math.Float32frombits(
+			uint32(bytes[j]) +
+				uint32(bytes[j+1])<<8 +
+				uint32(bytes[j+2])<<16 +
+				uint32(bytes[j+3])<<24,
+		)
+
+		i += 1
+	}
+
+	return result
 }

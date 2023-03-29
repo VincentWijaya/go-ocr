@@ -15,17 +15,29 @@
     <p>Compare vehicle plate number with registered face</p>
   </div>
 
+  {{if ne .Code "00"}}
+    <div class="alert alert-danger fade show" role="alert">
+      <strong>{{.Message}}</strong>
+    </div>
+  {{else if .Message}}
+    <script>
+      alert("Kendaraan dan pengendara valid!")
+    </script>
+  {{end}}
+
   <div class="container mt-5">
     <div class="row">
       <form action="/v1/validate-vehicle" method="POST"  enctype="multipart/form-data">
         <div class="col-sm-4">
           <h3>Vehicle Plate Photo</h3>
           <input id="plateInput" type="file" name="vehiclePhoto" accept="image/*" >
+          <img id="platePreview" src="#" alt="plate image" />
         </div>
         <div class="col-sm-4">
           <h3>Driver Photo</h3>
           <!-- <input id="driverInput" type="file" name="driverPhoto" accept="image/*" capture="camera"> -->
           <input id="driverInput" type="file" name="driverPhoto" accept="image/*">
+          <img id="driverPreview" src="#" alt="driver image" />
         </div>
 
         <button type="submit button" class="btn btn-primary">Submit</button>
@@ -34,4 +46,19 @@
   </div>
 </body>
 
+<script>
+  plateInput.onchange = evt => {
+    const [file] = plateInput.files
+    if (file) {
+      platePreview.src = URL.createObjectURL(file)
+    }
+  }
+
+    driverInput.onchange = evt => {
+      const [file] = driverInput.files
+      if (file) {
+        driverPreview.src = URL.createObjectURL(file)
+      }
+    }
+</script>
 </html>

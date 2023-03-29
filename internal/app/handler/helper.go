@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"path"
+	"text/template"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/vincentwijaya/go-ocr/constant/errs"
@@ -11,7 +13,7 @@ import (
 	"github.com/vincentwijaya/go-pkg/log"
 )
 
-func writeResponse(w http.ResponseWriter, data interface{}, err error, ctx context.Context) {
+func writeResponse(w http.ResponseWriter, data interface{}, err error, ctx context.Context, renderHTML bool) {
 	w.Header().Set("Content-Type", "application/json")
 	response := &entity.Response{
 		Success: false,
@@ -29,9 +31,27 @@ func writeResponse(w http.ResponseWriter, data interface{}, err error, ctx conte
 		response.Data = data
 	}
 
+	if renderHTML {
+		w.Header().Set("Content-Type", "text/html")
+		var filepath = path.Join("files/views", "index.html")
+		var tmpl, err = template.ParseFiles(filepath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
 	logger := log.WithFields(log.Fields{"request_id": middleware.GetReqID(ctx)})
 	logger.Infof("Response: %+v", response)
 	body, _ := json.Marshal(response)
+
 	_, _ = w.Write(body)
 }
 
@@ -67,6 +87,16 @@ var (
 		errs.PlateNotRecognize: {
 			message: errs.PlateNotRecognizeMessage,
 			code:    errs.PlateNotRecognizeErrorCode,
+			apiFail: false,
+		},
+		errs.DriverFaceNotDetected: {
+			message: errs.DriverFaceNotDetectedMessage,
+			code:    errs.DriverFaceNotDetectedErrorCode,
+			apiFail: false,
+		},
+		errs.PlatenumberNotRegistered: {
+			message: errs.PlatenumberNotRegisteredMessage,
+			code:    errs.PlatenumberNotRegisteredErrorCode,
 			apiFail: false,
 		},
 	}

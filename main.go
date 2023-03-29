@@ -133,7 +133,9 @@ func main() {
 			return
 		}
 
-		err = tmpl.Execute(w, make(map[string]interface{}))
+		err = tmpl.Execute(w, map[string]interface{}{
+			"Code": "00",
+		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

@@ -2,7 +2,6 @@ package validate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -51,24 +50,9 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 		}()
 	}()
 
-	// recognizeRes, err := recognizer.DirectRecognize(vehiclePhotoLocation)
-	// if err != nil {
-	// 	return
-	// }
-	// if len(recognizeRes.Plates) < 1 {
-	// 	err = errs.PlateNotRecognize
-	// 	return
-	// }
-
-	// logger.Infof("%+v", recognizeRes)
-	// recognizeData := recognizeRes.Plates[0]
-	// if recognizeData.BestPlate == "" {
-	// 	err = errs.PlateNotRecognize
-	// 	return
-	// }
-
 	recognizeRes, err := recognizer.Recognize(vehiclePhotoLocation, uc.secretKey)
 	if err != nil {
+		err = errs.PlateNotRecognize
 		return
 	}
 	if len(recognizeRes.Results) < 1 {
@@ -85,15 +69,25 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	res, err = uc.vehicleRepo.FindVehicleByPlateNumber(strings.ToUpper(recognizeData.Plate))
 	if err != nil {
+		err = errs.PlatenumberNotRegistered
 		return
 	}
 
+	driverFaceDescriptor, err := recog.GetFaceDescriptor(ctx, facePhotoLocation)
+	if err != nil {
+		err = errs.DriverFaceNotDetected
+		return
+	}
+
+	logger.Infof("%+v", recog.BBytesToDescriptor(driverFaceDescriptor))
+
 	faces, err := uc.faceRepo.FindFaceByMemberID(res.Member.ID)
 	if err != nil {
+		err = errs.FaceNotFound
 		return
 	}
 	if len(faces) < 1 {
-		err = errors.New("no face data found")
+		err = errs.FaceNotFound
 		return
 	}
 
@@ -141,8 +135,9 @@ func (uc *validateUC) ValidatePlateAndOwner(ctx context.Context, vehiclePhotoLoc
 
 	wg.Wait()
 
-	faceIDResult := recog.CompareFace(ctx, facePhotoLocation, faces, 0.5)
+	faceIDResult := recog.CompareFace(ctx, driverFaceDescriptor, faces, 0.2)
 
+	logger.Info(faceIDResult)
 	if faceIDResult < 1 {
 		err = errs.FaceNotFound
 		go func() {

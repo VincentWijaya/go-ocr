@@ -20,6 +20,9 @@ require (
 
 require (
 	github.com/davidbyttow/govips/v2 v2.11.0 // indirect
+	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/fogleman/gg v1.3.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/h2non/bimg v1.1.9 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/jackc/pgx/v4 v4.17.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/leandroveronezi/go-recognizer v1.0.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/image v0.3.0 // indirect

@@ -54,7 +54,7 @@ func (m *Module) ValidateVehicleAndOwner(w http.ResponseWriter, r *http.Request)
 
 	response, err = m.validate.ValidatePlateAndOwner(ctx, "./files/images/vehicle/"+vehiclePhotoLocation, "./files/images/face/"+driverPhotoLocation)
 
-	writeResponse(w, response, err, ctx)
+	writeResponse(w, response, err, ctx, true)
 }
 
 func readAndSaveFile(r *http.Request, dir, formKey string) (fileLocation string, err error) {
@@ -92,7 +92,7 @@ func readAndSaveFile(r *http.Request, dir, formKey string) (fileLocation string,
 			return fileName, err
 		}
 
-		rotated, err := bimg.NewImage(processed).Rotate(180)
+		rotated, err := bimg.NewImage(processed).AutoRotate()
 		if err != nil {
 			return fileName, err
 		}
